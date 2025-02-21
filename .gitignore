@@ -1,0 +1,11 @@
+# Ignore Node.js dependencies and build files
+frontend/node_modules/
+frontend/build/
+
+# Ignore Python virtual environment and compiled files
+backend/venv/
+backend/__pycache__/
+backend/db.sqlite3
+
+# Ignore environment variables
+#.env 
