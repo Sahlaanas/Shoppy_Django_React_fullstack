@@ -23,7 +23,7 @@ function Sidebar() {
       <Link to="/customer/change-password" className="list-group-item list-group-item-action">
         Change Password
       </Link>
-      <Link href="#" className="list-group-item list-group-item-action">
+      <Link to="/customer/addresslist" className="list-group-item list-group-item-action">
         Addresses
       </Link>
       <Link href="#" className="list-group-item list-group-item-action text-danger">

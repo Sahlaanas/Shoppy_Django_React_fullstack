@@ -15,7 +15,7 @@ function Dashboard() {
                         <div className="card">
                               <div className="card-body text-center">
                                     <h4>Total Orders</h4>
-                                    <h4><a href="#">123</a></h4>
+                                    <h4><a href=" ">123</a></h4>
                               </div>
                         </div>
                   </div>
@@ -23,7 +23,7 @@ function Dashboard() {
                         <div className="card">
                               <div className="card-body text-center">
                                     <h4>Total Wishlist</h4>
-                                    <h4><a href="#">123</a></h4>
+                                    <h4><a href=" ">123</a></h4>
                               </div>
                         </div>
                   </div>
@@ -31,7 +31,7 @@ function Dashboard() {
                         <div className="card">
                               <div className="card-body text-center">
                                     <h4>Total Address</h4>
-                                    <h4><a href="#">5</a></h4>
+                                    <h4><a href=" ">5</a></h4>
                               </div>
                         </div>
                   </div>

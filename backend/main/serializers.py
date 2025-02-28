@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Vendor, Product, ProductCategory, Customer, Order, OrderItems, CustomerAddress, ProductRating
+from .models import Vendor, Product, ProductCategory, Customer, Order, OrderItems, CustomerAddress, ProductRating, ProductImage
 
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
@@ -23,17 +23,24 @@ class ProductListSerializer(serializers.ModelSerializer):
     product_rating = serializers.StringRelatedField(many=True, read_only=True)    
     class Meta:
         model = Product
-        fields = ['id', 'category', 'vendor', 'title', 'details', 'price', 'product_rating']
+        fields = ['id', 'category', 'vendor', 'title','slug','tag_list', 'details', 'price', 'product_rating','demo_url', 'image']
         
     def __init__(self, *args, **kwargs):
         super(ProductListSerializer, self).__init__(*args, **kwargs)
         # self.Meta.depth = 1
-        
+ 
+class ProductImageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProductImage
+        fields=['id','product','image']
+                
 class ProductDetailSerializer(serializers.ModelSerializer):
     product_rating = serializers.StringRelatedField(many=True, read_only=True)
+    product_imgs = ProductImageSerializer(many=True, read_only=True)
     class Meta:
         model = Product
-        fields = ['id', 'category', 'vendor', 'title', 'details', 'price', 'product_rating']
+        fields = ['id', 'category', 'vendor', 'title','slug', 'details','image', 'price','tag_list', 'product_rating',
+                  'product_imgs','demo_url']
         
     def __init__(self, *args, **kwargs):
         super(ProductDetailSerializer, self).__init__(*args, **kwargs)
@@ -60,11 +67,16 @@ class CustomerDetailSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = Order
-        fields = ['id', 'customer']
+        fields = ['id','order_time','customer']
         
     def __init__(self, *args, **kwargs):
         super(OrderSerializer, self).__init__(*args, **kwargs)
         self.Meta.depth = 1
+        
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=OrderItems
+        fields=['id','order','product','qty','price']
         
 class OrderDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -110,3 +122,4 @@ class CategoryDetailSerializer(serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         super(CategoryDetailSerializer, self).__init__(*args, **kwargs)
         # self.Meta.depth = 1
+        

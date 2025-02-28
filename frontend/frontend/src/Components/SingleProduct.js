@@ -10,20 +10,20 @@ function SingleProduct(props) {
   return (
     <Col md={3} sm={6} xs={12} className="mb-4">
             <Card style={{ width: "100%" }}>
-                <Link to="/product/python-timer/123">
+                <Link to={`/product/${props.product.title}/${props.product.id}`}>
                 <Card.Img
                 variant="top"
-                src="/assets/demoimage.png"
+                src={props.product.image}
                 width="100%"
                 height="250px"
               />
              </Link>
               <Card.Body>
-              <Link to="/product/python-timer/123">
-                <Card.Title>{props.title}</Card.Title>
+              <Link to={`/product/${props.product.title}/${props.product.id}`}>
+                <Card.Title>{props.product.title}</Card.Title>
                 </Link>
                 <Card.Subtitle className="mb-2 text-muted">
-                  $99.99
+                  Rs. {props.product.price}
                 </Card.Subtitle>
 
                 {/* Rating & Add to Cart Section */}
