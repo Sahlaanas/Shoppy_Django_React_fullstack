@@ -1,8 +1,8 @@
-import React, { useEffect, useState, useContext} from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import SingleRelatedProduct from "./SingleRelatedProduct";
-import { CartContext } from "../Context";
+import { CartContext, UserContext } from "../Context";
 
 function ProductDetail() {
   const baseurl = "http://127.0.0.1:8000/api";
@@ -11,27 +11,32 @@ function ProductDetail() {
   const [productTags, setProductTags] = useState([]);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [cartButtonClickStatus, setcartButtonClickStatus] = useState(false);
-  const {cartData, setCartData} = useContext(CartContext);
+  const { cartData, setCartData } = useContext(CartContext);
+  const _currency = localStorage.getItem("currency");
+  const usercontext = useContext(UserContext);
+  const [productInWishlist, setProductInWishlist] = useState(false);
 
   useEffect(() => {
     fetchData(baseurl + "/product/" + product_id);
     fetchRelatedData(baseurl + "/related-products/" + product_id);
-    checkProductInCart(product_id)
+    checkProductInCart(product_id);
+    checkProductInWishlist(baseurl + "/check-in-wishlist/", product_id);
   }, [product_id]);
 
   function checkProductInCart(product_id) {
     try {
       var previousCart = localStorage.getItem("cartData");
-      
+
       // Handle null or invalid JSON
       if (!previousCart) {
         console.warn("🛑 No cart data found in localStorage.");
         return;
       }
-  
+
       var cartJson = JSON.parse(previousCart);
-  
-      if (Array.isArray(cartJson)) {  // ✅ Ensure it's an array before using map
+
+      if (Array.isArray(cartJson)) {
+        // ✅ Ensure it's an array before using map
         cartJson.forEach((cart) => {
           if (cart?.product?.id === product_id) {
             setcartButtonClickStatus(true);
@@ -44,7 +49,6 @@ function ProductDetail() {
       console.error("❌ Error parsing cartData from localStorage:", error);
     }
   }
-  
 
   const fetchData = (baseurl) => {
     axios
@@ -95,48 +99,90 @@ function ProductDetail() {
     // };
     // let updatedCart = [...cartJson, newCartItem];
     // localStorage.setItem("cartData", JSON.stringify(updatedCart));
-    
+
     //Another method
-    var previousCart=localStorage.getItem('cartData');
-    var cartJson=JSON.parse(previousCart);
-    var cartData={
-      'product': {
-            'id': productData.id,
-            'title': productData.title,
-            'price' : productData.price,
-            'image' : productData.image,
-          },
-          'user': {
-            'id': 1,
-          },
-    }
-    if(cartJson!=null){
+    var previousCart = localStorage.getItem("cartData");
+    var cartJson = JSON.parse(previousCart);
+    var cartData = {
+      product: {
+        id: productData.id,
+        title: productData.title,
+        price: productData.price,
+        usd_price: productData.usd_price,
+        image: productData.image,
+      },
+      user: {
+        id: 1,
+      },
+    };
+    if (cartJson != null) {
       cartJson.push(cartData);
-      var cartString=JSON.stringify(cartJson);
-      localStorage.setItem('cartData',cartString);
+      var cartString = JSON.stringify(cartJson);
+      localStorage.setItem("cartData", cartString);
       setCartData(cartJson);
-    }else{
-      var newCartList=[];
+    } else {
+      var newCartList = [];
       newCartList.push(cartData);
-      var cartString=JSON.stringify(newCartList);
-      localStorage.setItem('cartData',cartString);
+      var cartString = JSON.stringify(newCartList);
+      localStorage.setItem("cartData", cartString);
     }
     setcartButtonClickStatus(true);
   };
 
   const cartRemoveButtonHandler = () => {
-    var previousCart=localStorage.getItem('cartData');
-    var cartJson=JSON.parse(previousCart);
-    cartJson.map((cart,index) => {
-      if(cart!=null && cart.product.id == productData.id){
+    var previousCart = localStorage.getItem("cartData");
+    var cartJson = JSON.parse(previousCart);
+    cartJson.map((cart, index) => {
+      if (cart != null && cart.product.id == productData.id) {
         // delete cartJson[index];
         cartJson.splice(index, 1);
       }
     });
-    var cartString=JSON.stringify(cartJson);
-    localStorage.setItem('cartData',cartString)
+    var cartString = JSON.stringify(cartJson);
+    localStorage.setItem("cartData", cartString);
     setcartButtonClickStatus(false);
     setCartData(cartJson);
+  };
+
+  const saveWishlistHandler = () => {
+    const customerId = localStorage.getItem("customer_id");
+    axios
+      .post(baseurl + "/wishlist/", {
+        customer: customerId,
+        product: productData.id,
+      })
+      .then((response) => {
+        if(response.data.id){
+          setProductInWishlist(true)
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
+
+  const checkProductInWishlist = (baseurl, product_id) => {
+    const customerId = localStorage.getItem("customer_id");
+    const formData = new FormData();
+    formData.append("customer", customerId);
+    formData.append("product", product_id);
+
+    axios
+      .post(baseurl, formData, {
+        headers: { "Content-Type": "multipart/form-data" }, // Ensure it's sent as form data
+      })
+      .then((response) => {
+        console.log(response);
+
+        if (response.data.bool == true) {
+          setProductInWishlist(true);
+        } else {
+          setProductInWishlist(false);
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
   };
 
   return (
@@ -154,7 +200,13 @@ function ProductDetail() {
         <div className="col-8">
           <h3>{productData.title}</h3>
           <p>{productData.details}</p>
-          <h5 className="card-title">Price : Rs. {productData.price}</h5>
+          {_currency != "usd" && (
+            <h5 className="card-title">Price : Rs. {productData.price}</h5>
+          )}
+          {_currency == "usd" && (
+            <h5 className="card-title">Price : $ {productData.usd_price}</h5>
+          )}
+
           <p className="mt-3">
             <a
               title="Demo"
@@ -187,9 +239,32 @@ function ProductDetail() {
             <button title="Buy Now" className="btn btn-success ms-1">
               <i className="fa-solid fa-bag-shopping"></i> Buy Now
             </button>
-            <button title="Add to Wishlist" className="btn btn-danger ms-1">
-              <i className="fa fa-heart"></i> Wishlist
-            </button>
+            {usercontext && !productInWishlist && (
+              <button
+                title="Add to Wishlist"
+                type="button"
+                onClick={saveWishlistHandler}
+                className="btn btn-danger ms-1"
+              >
+                <i className="fa fa-heart"></i> Wishlist
+              </button>
+            )}
+            {!usercontext && (
+              <button
+                title="Add to Wishlist"
+                className="btn btn-danger ms-1 disabled"
+              >
+                <i className="fa fa-heart"></i> Wishlist
+              </button>
+            )}
+            {usercontext && productInWishlist && (
+              <button
+                title="Add to Wishlist"
+                className="btn btn-danger ms-1 disabled"
+              >
+                <i className="fa fa-heart"></i> Wishlist
+              </button>
+            )}
           </p>
           <hr></hr>
           <div className="producttags">

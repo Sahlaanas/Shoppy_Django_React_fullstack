@@ -1,19 +1,21 @@
 from django.shortcuts import render
 from . import serializers
-from rest_framework import generics, permissions, viewsets, pagination
-from .models import Vendor, Product, Customer, Order, OrderItems, CustomerAddress, ProductRating, ProductCategory
+from rest_framework import generics, viewsets, pagination
+from .models import Vendor, Product, Customer, Order, OrderItems, Wishlist, CustomerAddress, ProductRating, ProductCategory
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import viewsets
-from rest_framework.response import Response
-from rest_framework import status
 from .models import Order
-from .serializers import OrderSerializer
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.response import Response
+from rest_framework import generics, status
 
 # Create your views here.
+
+
 class VendorList(generics.ListCreateAPIView):
     queryset = Vendor.objects.all()
     serializer_class = serializers.VendorSerializer
@@ -39,6 +41,11 @@ class ProductList(generics.ListCreateAPIView):
                 raise NotFound("Category does not exist.")  # Return 404 instead of server error
         else:
             print("No category ID provided in request.")
+            
+        if 'fetch_limit' in self.request.GET:
+            limit=self.request.GET['fetch_limit']
+            limit= int(limit)
+            qs=qs[:limit]
         return qs
     
 class TagProductList(generics.ListCreateAPIView):
@@ -77,6 +84,13 @@ class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Customer.objects.all()
     serializer_class = serializers.CustomerDetailSerializer
     
+class UserDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = User.objects.all()
+    serializer_class = serializers.UserSerializer
+    
+
+    
+    
 class OrderList(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = serializers.OrderSerializer
@@ -93,7 +107,17 @@ class OrderItemList(generics.ListCreateAPIView):
     queryset = OrderItems.objects.all()
     serializer_class=serializers.OrderItemSerializer
   
+class CustomerOrderItemList(generics.ListCreateAPIView):
+    queryset = OrderItems.objects.all()
+    serializer_class=serializers.OrderItemSerializer  
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs=qs.filter(order__customer__id=customer_id)
+        return qs
         
+    
     
 class OrderDetail(generics.ListAPIView):
     # queryset = OrderItems.objects.all()
@@ -184,5 +208,82 @@ def customer_register(request):
         msg={
                 'bool' : False,
                 'msg' : 'Username already exists!!'
+            }
+    return JsonResponse(msg)
+
+@csrf_exempt 
+def update_order_status(request,order_id):
+    if request.method == 'POST':
+        updateResponse = Order.objects.filter(id=order_id).update(order_status=True)
+        msg = {
+            'bool' : False,
+        }
+        if updateResponse:
+            msg = {
+                'bool' : True
+            }
+    return JsonResponse(msg)
+
+@csrf_exempt 
+def update_download_count(request, product_id):
+    if request.method =='POST':
+        product = Product.objects.get(id=product_id)
+        totalDownloads=product.downloads
+        totalDownloads=int(totalDownloads)
+        totalDownloads += 1
+        if totalDownloads == 0:
+            totalDownloads = 1
+        updateResponse = Product.objects.filter(id=product_id).update(downloads=totalDownloads)
+        msg = {
+            'bool' : False,
+        }
+        if updateResponse:
+            msg = {
+                'bool' : True
+            }
+    return JsonResponse(msg)
+
+class WishList(generics.ListCreateAPIView):
+    queryset = Wishlist.objects.all()
+    serializer_class = serializers.WishlistSerializer
+    
+@csrf_exempt
+def check_in_wishlist(request):
+    if request.method == 'POST':
+        product_id = request.POST.get('product')
+        customer_id = request.POST.get('customer')
+        checkWishlist=Wishlist.objects.filter(product__id=product_id, customer__id=customer_id).count()
+        msg = {
+            'bool':False
+        }
+        if checkWishlist > 0:
+            msg={
+                'bool' : True
+            }
+        return JsonResponse(msg)
+        
+        
+class WishItemList(generics.ListAPIView):
+    queryset = Wishlist.objects.all()
+    serializer_class = serializers.WishlistSerializer
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs = qs.filter(customer__id=customer_id)
+        return qs
+    
+@csrf_exempt  
+def remove_from_wishlist(request):
+    if request.method == 'POST':
+        wishlist_id = request.POST.get('wishlist_id')
+        response = Wishlist.objects.filter(id=wishlist_id).delete()
+        
+        msg= {
+            'bool': False
+        }
+        if response:
+            msg={
+                'bool' : True
             }
     return JsonResponse(msg)

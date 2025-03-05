@@ -1,6 +1,6 @@
 //Packages
 import { Route, Routes } from "react-router-dom";
-import { CartContext } from "./Context";
+import { CartContext, CurrencyContext } from "./Context";
 import { useState } from "react";
 
 //Assets
@@ -47,6 +47,7 @@ import SellerChangePassword from "./Components/Seller/SellerChangePassword";
 import Logout from "./Components/Customer/Logout";
 
 const checkCart=localStorage.getItem('cartData');
+const currentCurrency = localStorage.getItem('currency');
 
 function App() {
   const [cartData, setCartData] = useState(() => {
@@ -57,8 +58,10 @@ function App() {
       return []; // ✅ Fallback to an empty array
     }
   });
+  const [currencyData, setCurrencyData] = useState(currentCurrency);
 
   return (
+    <CurrencyContext.Provider value={{currencyData,setCurrencyData}}>
     <CartContext.Provider value={{cartData, setCartData}}>
     <div className="App"> 
       <Header />
@@ -99,6 +102,7 @@ function App() {
       <Footer />
     </div>
     </CartContext.Provider>
+    </CurrencyContext.Provider>
   );
 }
 

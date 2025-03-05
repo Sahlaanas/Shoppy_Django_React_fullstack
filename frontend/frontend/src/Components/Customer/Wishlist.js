@@ -1,8 +1,45 @@
-import React from "react";
+import React, { useEffect, useState, useContext } from "react";
 import Sidebar from "./Sidebar";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import { CurrencyContext } from "../../Context";
+
 
 function Wishlist() {
+  const baseurl = 'http://127.0.0.1:8000/api';
+  const customerId = localStorage.getItem('customer_id');
+  const [wishlistItems, setWishlistItems] = useState([]);
+  const {currencyData} = useContext(CurrencyContext);
+
+  useEffect(() =>{
+  fetchData(baseurl+'/customer/'+customerId+'/wishitems/');
+  },[])
+
+  const fetchData = (baseurl) => {
+    axios
+    .get(baseurl)
+    .then((response) => {
+      console.log(response.data.result);
+      setWishlistItems(response.data.result)
+    })
+    .catch((error) => console.error("Error fetching data:", error));
+  }
+
+  function removeFromWishlist(wishlist_id) { 
+    const formData = new FormData();
+    formData.append('wishlist_id', wishlist_id);
+    axios.post(baseurl+'/remove-from-wishlist/', formData)
+    .then(function (response){
+        if(response.data.bool == true){
+          alert('item removed from wishlist')
+        }
+    }).catch(function (error){
+      console.error(error)
+    })
+
+  }
+
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -22,96 +59,33 @@ function Wishlist() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Django
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <button className="btn btn-danger btn-sm">Remove</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Python
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <button className="btn btn-danger btn-sm">Remove</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>3</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Flask
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <button className="btn btn-danger btn-sm">Remove</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>4</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        FastAPI
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <button className="btn btn-danger btn-sm">Remove</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>5</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        NumPy
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <button className="btn btn-danger btn-sm">Remove</button>
-                    </td>
-                  </tr>
+                  {
+                    wishlistItems.map((item, index) => {
+                      return  <tr>
+                      <td>{index+1}</td>
+                      <td>
+                        <Link>
+                          <img
+                            src={item.product.image}
+                            className="img-thumbnail"
+                            alt="....."
+                            width="80"
+                          />
+                          {item.product.title}
+                        </Link>
+                      </td>
+                      {
+                        currencyData != 'usd' && <td>Rs.{item.product.price}</td>
+                      }
+                      {
+                        currencyData == 'usd' && <td>${item.product.usd_price}</td>
+                      }
+                      <td>
+                        <button className="btn btn-danger btn-sm" type="button" onClick={() => removeFromWishlist(item.id)}>Remove</button>
+                      </td>
+                    </tr>
+                    })
+                  }
                 </tbody>
               </table>
             </div>

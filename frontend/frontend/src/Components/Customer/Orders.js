@@ -1,8 +1,26 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "./Sidebar";
 import { Link } from "react-router-dom";
+import axios from "axios";
+import OrderRow from "./OrderRow";
 
 function Orders() {
+  const baseurl = "http://127.0.0.1:8000/api";
+  const customerId = localStorage.getItem("customer_id");
+  const [orderItems, setOrderItems] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get(`${baseurl}/customer/${customerId}/orderitems/`)
+      .then((response) => {
+        console.log(response.data.result);
+        setOrderItems(response.data.result);
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+  }, []);
+
+
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -23,91 +41,10 @@ function Orders() {
                   </tr>
                 </thead>
                 <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>
-                    <Link>
-                      <img
-                        src="/assets/demoImage.png"
-                        className="img-thumbnail"
-                        alt="....."
-                        width="80"
-                      />
-                      Django
-                    </Link>
-                  </td>
-                  <td>Rs.500</td>
-                  <td><span className="text-success"><i className="fa fa-check-circle"></i> Completed</span></td>
-                  <td><button className="btn btn-primary btn-sm">Download</button></td>
-                </tr>
-                <tr>
-                  <td>2</td>
-                  <td>
-                    <Link>
-                      <img
-                        src="/assets/demoImage.png"
-                        className="img-thumbnail"
-                        alt="....."
-                        width="80"
-                      />
-                      Python
-                    </Link>
-                  </td>
-                  <td>Rs.500</td>
-                  <td><span className="text-success"><i className="fa fa-check-circle"></i> Completed</span></td>
-                  <td><button className="btn btn-primary btn-sm">Download</button></td>
-
-                </tr>
-                <tr>
-                  <td>3</td>
-                  <td>
-                    <Link>
-                      <img
-                        src="/assets/demoImage.png"
-                        className="img-thumbnail"
-                        alt="....."
-                        width="80"
-                      />
-                      Flask
-                    </Link>
-                  </td>
-                  <td>Rs.500</td>
-                  <td><span className="text-secondary"><i className="fa fa-spin fa-spinner"></i> Processing</span></td>
-                </tr>
-                <tr>
-                  <td>4</td>
-                  <td>
-                    <Link>
-                      <img
-                        src="/assets/demoImage.png"
-                        className="img-thumbnail"
-                        alt="....."
-                        width="80"
-                      />
-                      FastAPI
-                    </Link>
-                  </td>
-                  <td>Rs.500</td>
-                  <td><span className="text-danger"><i className="fa fa-times-circle"></i> Cancelled</span></td>
-                </tr>
-                <tr>
-                  <td>5</td>
-                  <td>
-                    <Link>
-                      <img
-                        src="/assets/demoImage.png"
-                        className="img-thumbnail"
-                        alt="....."
-                        width="80"
-                      />
-                      NumPy
-                    </Link>
-                  </td>
-                  <td>Rs.500</td>
-                  <td><span className="text-success"><i className="fa fa-check-circle"></i> Completed</span></td>
-                  <td><button className="btn btn-primary btn-sm">Download</button></td>
-                </tr>
-              </tbody>
+                  {orderItems.map((item, index) => {
+                    return <OrderRow item={item} key={index} index={index} />
+                  })}
+                </tbody>
               </table>
             </div>
           </div>

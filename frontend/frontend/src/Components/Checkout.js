@@ -1,24 +1,27 @@
 import React, { useContext, useState } from "react";
 import { Link } from "react-router-dom";
-import { CartContext } from "../Context";
+import { CartContext, CurrencyContext } from "../Context";
 
 function Checkout() {
   const { cartData, setCartData } = useContext(CartContext);
   const [cartButtonClickStatus, setcartButtonClickStatus] = useState(false);
   const [productData, setProductData] = useState([]);
+  const { currencyData } = useContext(CurrencyContext);
 
   if (cartData == null || cartData.length == 0) {
     var cartItems = 0;
-    var sum=0;
+    var sum = 0;
   } else {
     cartItems = cartData.length;
-    sum=0; 
-    cartData.map((item,index) => {
-      sum += parseFloat(item.product.price)
-    })
+    sum = 0;
+    cartData.map((item, index) => {
+      if (currencyData == "inr" || currencyData == undefined) {
+        sum += parseFloat(item.product.price);
+      } else if (currencyData == "usd") {
+        sum += parseFloat(item.product.usd_price);
+      }
+    });
   }
-
- 
 
   const cartRemoveButtonHandler = (product_id) => {
     var previousCart = localStorage.getItem("cartData");
@@ -29,7 +32,7 @@ function Checkout() {
         cartJson.splice(index, 1);
       }
     });
-    var cartString = JSON.stringify(cartJson);      
+    var cartString = JSON.stringify(cartJson);
     localStorage.setItem("cartData", cartString);
     setcartButtonClickStatus(false);
     setCartData(cartJson);
@@ -67,7 +70,14 @@ function Checkout() {
                             {item.product.title}
                           </Link>
                         </td>
-                        <td>Rs.{item.product.price}</td>
+                        {(currencyData == "inr" ||
+                          currencyData == undefined) && (
+                          <td>Rs.{item.product.price}</td>
+                        )}
+                        {currencyData == "usd" && (
+                          <td>${item.product.usd_price}</td>
+                        )}
+
                         <td>
                           {" "}
                           <button
@@ -89,7 +99,13 @@ function Checkout() {
                   <tr>
                     <th></th>
                     <th>Total</th>
-                    <th>Rs. {sum}</th>
+                    {(currencyData == "inr" || currencyData == undefined) && (
+                      <td>Rs.{sum}</td>
+                    )}
+                    {currencyData == "usd" && (
+                      <td>${sum}</td>
+                    )}
+                    
                   </tr>
                   <tr>
                     <td colSpan="3" align="right">

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Row from "react-bootstrap/Row";
 import Col from "react-bootstrap/Col";
 import { Button } from "react-bootstrap";
@@ -7,8 +7,29 @@ import Container from "react-bootstrap/Container";
 import Card from "react-bootstrap/Card";
 import { Link } from "react-router-dom";
 import SingleProduct from "./SingleProduct";
+import axios from "axios";
 
 function Home() {
+  const baseurl = "http://127.0.0.1:8000/api";
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    console.log('it is running');
+    
+    fetchData(baseurl + "/products/?fetch_limit=4");
+  },[]);
+
+  function fetchData(baseurl) {
+    axios.get(baseurl).then((response) => {
+      console.log(response);
+      
+      setProducts(response.data.results)
+    })
+    .catch((error) => {
+      console.error(error)
+    });
+  };
+  
   return (
     <div>
       <Container className="mt-4">
@@ -19,12 +40,11 @@ function Home() {
           </Link>
         </h2>
         <Row className="d-flex justify-content-center flex-wrap">
-          <SingleProduct title="Django Project 1"/>
-          <SingleProduct title="Django Project 2" />
-          <SingleProduct title="Django Project 3"/>
-          <SingleProduct title="Django Project 4"/>
-          <SingleProduct title="Django Project 5"/>
-        </Row>
+        {products.map((product, index) => (
+          <SingleProduct key={index} product={product} /> 
+        ))}
+      </Row>
+       
       </Container>
       {/* Popular Categories */}
       <Container className="mt-4">

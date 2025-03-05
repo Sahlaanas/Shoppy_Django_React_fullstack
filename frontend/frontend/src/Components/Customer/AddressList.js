@@ -16,7 +16,7 @@ function AddressList() {
                 <i className="fa fa-plus-circle"></i> Add Address
               </Link>
             </div>
-          </div>
+          </div> 
 
           <div className="row">
             <div className="col-4 mb-4">

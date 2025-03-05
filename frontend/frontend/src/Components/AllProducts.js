@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import Row from "react-bootstrap/Row";
 import Container from "react-bootstrap/Container";
 import SingleProduct from "./SingleProduct";
