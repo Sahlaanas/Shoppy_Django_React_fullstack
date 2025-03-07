@@ -28,7 +28,6 @@ function Login() {
     axios
       .post(baseUrl + "/customer/login/", formData)
       .then(function (response) {
-        console.log(response,"===========response");
 
         if (response.data.bool === false) {
           setFormError(true);

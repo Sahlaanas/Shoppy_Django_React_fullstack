@@ -1,10 +1,12 @@
 import React from "react";
 import Sidebar from "./Sidebar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
+import { useParams } from "react-router-dom";
 
-function AddAddress() {
+function UpdateAddress() {
   const baseurl = "http://127.0.0.1:8000/api";
+  const {address_id} = useParams();
   var customer_id = parseInt(localStorage.getItem("customer_id"));
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -13,6 +15,24 @@ function AddAddress() {
     address: "",
   });
 
+  useEffect(() => {
+    fetchData(`${baseurl}/address/${address_id}/`);
+  }, []);
+
+  const fetchData = (url) => {
+    axios
+      .get(url)
+      .then((response) => {
+        console.log(response);
+        setAddressFormData({
+            'address':response.data.address,
+            'customer' : customer_id
+        })
+        
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+  };
+console.log(addressFormData,"==============")
   const inputHandler = (e) => {
     setAddressFormData({
       ...addressFormData,
@@ -36,21 +56,19 @@ const submitHandler = () => {
   };
   
   
-  axios.post(baseurl + "/address/", payload, {
+  axios.put(baseurl + "/address/"+address_id+'/', payload, {
     headers: {
       "Content-Type": "application/json",
     },
   })
   .then((response) => {
-    if(response.status!=201){
+    if(response.status!=200){
       setErrorMsg('Data not saved')
       setSuccessMsg('')
     }else{
       setSuccessMsg("Data saved")
       setErrorMsg('');
-      setAddressFormData({
-        'address' : ''
-      })
+      
 
     }
   })
@@ -70,7 +88,7 @@ const disableBtn = (addressFormData.address == '');
         </div>
         <div className="col-md-9 col-12">
           <div className="card">
-            <h4 className="card-header">Add Address</h4>
+            <h4 className="card-header">Update Address</h4>
             <div className="card-body">
               {errorMsg && <p className="alert alert-danger">{errorMsg}</p>}
               {successMsg && <p className="alert alert-success">{successMsg}</p>}
@@ -97,4 +115,4 @@ const disableBtn = (addressFormData.address == '');
   );
 }
 
-export default AddAddress;
+export default UpdateAddress;

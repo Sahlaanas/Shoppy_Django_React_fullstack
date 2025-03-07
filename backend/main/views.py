@@ -128,11 +128,50 @@ class OrderDetail(generics.ListAPIView):
         order = Order.objects.get(id=order_id)
         order_items = OrderItems.objects.filter(order=order)
         return order_items
-    
-class CustomerAddressViewSet(viewsets.ModelViewSet):
+
+class CustomerAddAddress(generics.ListCreateAPIView):
     serializer_class = serializers.CustomerAdressSerializer
     queryset = CustomerAddress.objects.all()
     
+    def get_serializer_context(self):
+        return {'request': self.request}
+    
+
+
+class CustomerAddressList(generics.ListAPIView):
+    serializer_class = serializers.CustomerAdressSerializer
+    queryset = CustomerAddress.objects.all()
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        customer_id = self.kwargs['pk']
+        qs = qs.filter(customer__id=customer_id)
+        return qs
+    
+# class CustomerAddressViewSet(viewsets.ModelViewSet):
+#     serializer_class = serializers.CustomerAdressSerializer
+#     queryset = CustomerAddress.objects.all()
+
+#     def perform_create(self, serializer):
+#         user = self.request.user
+#         print(f"User: {user}, Is Authenticated: {user.is_authenticated}")  # Debugging
+        
+#         if not user.is_authenticated:
+#             raise serializers.ValidationError("Authentication required. Please log in.")
+
+#         # If authenticated, assign the correct customer
+#         try:
+#             customer = Customer.objects.get(user=user)
+#         except Customer.DoesNotExist:
+#             raise serializers.ValidationError("No customer profile found for this user.")
+
+#         serializer.save(customer=customer)
+
+class AddressDetail(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CustomerAddress.objects.all()
+    serializer_class = serializers.CustomerAdressSerializer
+    
+
 class ProductRatingViewSet(viewsets.ModelViewSet):
     serializer_class = serializers.ProductRatingSerializer
     queryset = ProductRating.objects.all() 
@@ -285,5 +324,80 @@ def remove_from_wishlist(request):
         if response:
             msg={
                 'bool' : True
+            }
+    return JsonResponse(msg)
+
+@csrf_exempt
+def mark_default_adress(request,pk):
+    if request.method == 'POST':
+        address_id = request.POST.get('address_id')
+        CustomerAddress.objects.all().update(default_address=False)
+        res = CustomerAddress.objects.filter(id=address_id).update(default_address=True)
+        msg = {
+            'bool' : False
+        }
+        if res:
+            msg = {
+                'bool' : True
+            }
+    return JsonResponse(msg)
+
+def customer_dashboard(request,pk):
+    customer_id = pk
+    totalAddress = CustomerAddress.objects.filter(customer__id=customer_id).count()
+    totalOrders = Order.objects.filter(customer__id=customer_id).count()
+    totalWishlist = Wishlist.objects.filter(customer__id=customer_id).count()
+    msg = {
+            'totalOrders' : totalOrders,
+            'totalAddress' : totalAddress,
+            'totalWishlist' : totalWishlist,
+        }
+    return JsonResponse(msg)
+    
+@csrf_exempt
+def vendor_register(request):
+    first_name = request.POST.get('first_name')
+    last_name = request.POST.get('last_name')
+    username = request.POST.get('username')
+    email = request.POST.get('email')
+    mobile = request.POST.get('mobile')
+    address = request.POST.get('address')
+    password = request.POST.get('password')
+    try:
+        user = User.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            username=username,
+            email=email,
+            password=password
+        )
+        if user:
+            try:
+                #Create customer
+                vendor = Vendor.objects.create(
+                    user=user,
+                    mobile=mobile,
+                    address=address
+                )
+                msg={
+                    'bool' : True,
+                    'user' : user.id,
+                    'vendor': vendor.id,
+                    'msg' : 'Thank you for your registration! Please login now!'
+                }
+            except IntegrityError:
+                msg={
+                'bool' : False,
+                'msg' : 'Mobile already exists!!'
+            }
+        else:
+            msg={
+                'bool' : False,
+                'msg' : 'Oops....Something went wrong'
+            }
+    except IntegrityError:
+        msg={
+                'bool' : False,
+                'msg' : 'Username already exists!!'
             }
     return JsonResponse(msg)

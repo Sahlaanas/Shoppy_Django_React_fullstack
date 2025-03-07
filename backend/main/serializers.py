@@ -10,7 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
 class VendorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = ['id', 'user', 'address']
+        fields = ['id', 'user', 'address', 'profile_img','mobile']
         
     def __init__(self, *args, **kwargs):
         super(VendorSerializer, self).__init__(*args, **kwargs)
@@ -19,7 +19,7 @@ class VendorSerializer(serializers.ModelSerializer):
 class VendorDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Vendor
-        fields = ['id', 'user', 'address']
+        fields = ['id', 'user', 'address', 'profile_img','mobile']
         
     def __init__(self, *args, **kwargs):
         super(VendorDetailSerializer, self).__init__(*args, **kwargs)
@@ -110,10 +110,15 @@ class CustomerAdressSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomerAddress
         fields = ['id', 'customer', 'address', 'default_address']
-        
+    
     def __init__(self, *args, **kwargs):
         super(CustomerAdressSerializer, self).__init__(*args, **kwargs)
-        self.Meta.depth = 1
+        # Only set depth for GET requests, not for POST
+        request = kwargs.get('context', {}).get('request')
+        if request and request.method == 'GET':
+            self.Meta.depth = 1
+        else:
+            self.Meta.depth = 0
         
 class ProductRatingSerializer(serializers.ModelSerializer):
     class Meta:

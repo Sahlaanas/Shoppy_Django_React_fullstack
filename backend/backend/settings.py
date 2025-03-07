@@ -91,7 +91,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'shoppy_db',
         'USER' : 'postgres',
-        'PASSWORD' : 'admin123',
+        'PASSWORD' : 'Achu@123#',
         'HOST' : 'localhost',
         'PORT' : 5432,
     }
@@ -151,6 +151,8 @@ REST_FRAMEWORK = {
     #     'rest_framework_simplejwt.authentication.JWTAuthentication',
     # ],
     # 'DEFAULT_PAGINATION_CLASS' : 'rest_framework.pagination.PageNumberPagination',
+
+    
     'DEFAULT_PAGINATION_CLASS' : 'main.pagination.CustomPagination',
      
     'PAGE_SIZE' : 10
