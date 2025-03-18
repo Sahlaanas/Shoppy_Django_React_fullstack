@@ -54,7 +54,7 @@ function SellerSidebar() {
         Change Password
       </Link>
       <Link
-        href="#"
+        to="/seller/logout"
         className="list-group-item list-group-item-action text-danger"
       >
         Logout

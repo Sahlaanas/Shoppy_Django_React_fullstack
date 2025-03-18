@@ -1,7 +1,43 @@
-import React from "react";
+import React,{ useState, useEffect } from "react";
 import SellerSidebar from "./SellerSidebar";
+import axios from "axios";
+import { Link } from "react-router-dom";
 
 function Customers() {
+  const [customerList, setCustomerList] = useState([]);
+  const vendor_id = localStorage.getItem("vendor_id");
+  const baseurl = "http://127.0.0.1:8000/api";
+  useEffect(() => {
+    fetchData(`${baseurl}/vendor/${vendor_id}/customers/`);
+  }, []);
+
+  function fetchData(url) {
+    axios
+      .get(url)
+      .then((response) => {
+        setCustomerList(response.data.result);
+  
+        
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+  }
+
+  function showConfirm(customer_id) {
+    var _confirm = window.confirm('Are you sure to delete this product?');
+    if(_confirm){
+      fetch(baseurl+'/delete-customer-orders/'+customer_id+'/',{
+        method:'DELETE'
+      })
+      .then((response) => {
+        if(response.bool==true){
+          fetchData(`${baseurl}/seller/customer/${customer_id}/orderitems/`)
+        }
+      })
+
+    }    
+  }
+  
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -22,34 +58,28 @@ function Customers() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>John Alex</td>
-                    <td>Johnalex@gmail.com</td>
-                    <td>+91 8526425236</td>
-                    <td>
-                    <button className="btn btn-primary btn-sm">
-                        Orders
-                      </button>
-                      <button className="btn btn-danger btn-sm ms-1">
-                        Remove from list
-                      </button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>Mary Alex</td>
-                    <td>maryalex@gmail.com</td>
-                    <td>+91 8526485236</td>
-                    <td>
-                    <button className="btn btn-primary btn-sm">
-                        Orders
-                      </button>
-                      <button className="btn btn-danger btn-sm ms-1">
-                        Remove from list
-                      </button>
-                    </td>
-                  </tr>
+                  {
+                    customerList.map((item, index) => {
+                      return (
+                        <tr>
+                        <td>{index+1}</td>
+                        <td>{item.user.username}</td>
+                        <td>{item.user.email}</td>
+                        <td>{item.customer.mobile}</td>
+                        <td>
+                        <Link to={`/seller/customer/${item.customer.id}/orderitems`} className="btn btn-primary btn-sm">
+                            Orders
+                          </Link>
+                          <button onClick={() => showConfirm(item.customer.id)} className="btn btn-danger btn-sm ms-1">
+                            Remove from list
+                          </button>
+                        </td>
+                      </tr>
+                      )
+                    })
+                  }
+
+
                 </tbody>
               </table>
             </div>

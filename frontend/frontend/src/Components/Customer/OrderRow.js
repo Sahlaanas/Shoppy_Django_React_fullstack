@@ -74,6 +74,10 @@ function OrderRow(props) {
             </span>
           </button>
         )}
+        {
+          item.order.order_status==true && <Link className="btn btn-sm btn-success ms-2" to={`/customer/add-review/${item.product.id}`}> Add Review
+          </Link>
+        }
       </td>
     </tr>
   );

@@ -1,9 +1,48 @@
-import React from 'react'
-import SellerSidebar from './SellerSidebar'
+import React, { useState } from "react";
+import SellerSidebar from "./SellerSidebar";
+import axios from "axios";
 
 function SellerChangePassword() {
+  const baseurl = "http://127.0.0.1:8000/api";
+  const vendor_id = localStorage.getItem("vendor_id");
+  const [passwordData, setPasswordData] = useState({
+    password: "",
+    c_password: "",
+  });
+
+  const [confirmError, setConfirmError] = useState(false);
+
+  const inputHandler = (e) => {
+    const newPasswordData = {
+      ...passwordData,
+      [e.target.name]: e.target.value,
+    };
+    setPasswordData(newPasswordData);
+
+    // Compare the new values, not the old state
+    if (e.target.name === "c_password") {
+      setConfirmError(newPasswordData.password !== e.target.value);
+    } else if (e.target.name === "password") {
+      setConfirmError(e.target.value !== newPasswordData.c_password);
+    }
+  };
+
+  const submitHandler = () => {
+    const formData = new FormData();
+    formData.append("password", passwordData.password);
+
+    axios
+      .post(`${baseurl}/vendor-change-password/${vendor_id}/`, formData)
+      .then(function (response) {
+        console.log(response);
+      })
+      .catch(function (error) {
+        console.error(error);
+      });
+  };
+
   return (
-      <div className="container mt-4">
+    <div className="container mt-4">
       <div className="row">
         <div className="col-md-3 col-12 mb-2">
           <SellerSidebar />
@@ -12,37 +51,42 @@ function SellerChangePassword() {
           <div className="card">
             <h4 className="card-header">Change Password</h4>
             <div className="card-body">
-              <form>
-                <div className="mb-3">
-                  <label for="newPassword" className="form-label">
-                    New Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="newPassword"
-                  />
-                </div>
-                <div className="mb-3">
-                  <label for="confirmPassword" className="form-label">
-                    Confirm Password
-                  </label>
-                  <input
-                    type="password"
-                    className="form-control"
-                    id="confirmPassword"
-                  />
-                </div>
-                <button type="submit" className="btn btn-primary">
-                  Submit
-                </button>
-              </form>
+              {confirmError && (
+                <p className="text-danger">Password does not match</p>
+              )}
+              <div className="mb-3">
+                <label for="newPassword" className="form-label">
+                  New Password
+                </label>
+                <input
+                  onChange={inputHandler}
+                  name="password"
+                  type="password"
+                  className="form-control"
+                  id="newPassword"
+                />
+              </div>
+              <div className="mb-3">
+                <label for="confirmPassword" className="form-label">
+                  Confirm Password
+                </label>
+                <input
+                  onChange={inputHandler}
+                  name="c_password"
+                  type="password"
+                  className="form-control"
+                  id="confirmPassword"
+                />
+              </div>
+              <button onClick={submitHandler} type="button" className="btn btn-primary">
+                Submit
+              </button>
             </div>
           </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
-export default SellerChangePassword
+export default SellerChangePassword;

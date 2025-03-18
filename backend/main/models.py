@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils.text import slugify
+from django.db.models import Count,Sum
+import datetime
 
 # Create your models here.
 
@@ -13,12 +15,79 @@ class Vendor(models.Model):
     def __str__(self):
         return self.user.username
     
+    @property
+    def categories(self):
+        cats=Product.objects.filter(vendor=self).values('category__title','category__id').order_by('category__title').distinct()
+        return cats 
+        
+    
+    @property
+    def show_chart_daily_orders(self):
+        orders = OrderItems.objects.filter(product__vendor=self).values('order__order_time__date').annotate(count=Count('id'))
+        dateList = []
+        countList = []
+        dataSet = {}
+        if orders:
+            for order in orders:
+                dateList.append(order['order__order_time__date'])
+                countList.append(order['count'])
+        dataSet = {'dates':dateList, 'count':countList}
+        return dataSet
+    
+    @property
+    def show_chart_monthly_orders(self):
+        orders = OrderItems.objects.filter(product__vendor=self).values('order__order_time__month').annotate(count=Count('id'))
+        dateList = []
+        countList = []
+        dataSet = {}
+        
+        if orders:
+            for order in orders:
+                monthinteger = order['order__order_time__month']
+                # Make sure monthinteger is not None before using it
+                if monthinteger is not None:
+                    month = datetime.date(1900, monthinteger, 1).strftime('%B')
+                    dateList.append(month)  # This should now have a valid value
+                    countList.append(order['count'])
+        
+        dataSet = {'dates': dateList, 'count': countList}
+        return dataSet
+    
+    @property
+    def show_chart_yearly_orders(self):
+        orders = OrderItems.objects.filter(product__vendor=self).values('order__order_time__year').annotate(count=Count('id'))
+        dateList = []
+        countList = []
+        dataSet = {}
+        if orders:
+            for order in orders:
+                dateList.append(order['order__order_time__year'])
+                countList.append(order['count'])
+        dataSet = {'dates':dateList, 'count':countList}
+        return dataSet
+    
+    @property
+    def total_products(self):
+        product_count = Product.objects.filter(vendor=self).count()
+        return product_count
+            
+    
 class ProductCategory(models.Model):
     title = models.CharField(max_length=100)
     details = models.TextField(null=True, blank=True)
+    cat_img = models.ImageField(upload_to='category_img', null=True)
     
     def __str__(self):
         return self.title
+    
+    @property
+    def total_downloads(self):
+        totalDownloads=0
+        products = Product.objects.filter(category=self)
+        for product in products:
+            if product.downloads:
+                totalDownloads += int(product.downloads)
+        return totalDownloads
     
     class Meta:
         verbose_name_plural = 'Product Categories'
@@ -36,6 +105,7 @@ class Product(models.Model):
     demo_url = models.URLField(null=True, blank=True)
     product_file = models.FileField(upload_to='product_files/', null=True)
     downloads=models.CharField(max_length=200, default=0, null=True)
+    publish_status = models.BooleanField(default=False) 
     
     
     def __str__(self):

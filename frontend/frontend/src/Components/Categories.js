@@ -51,7 +51,7 @@ function Categories() {
                     {category.title}
                   </Link>
                 </Card.Title>
-                <div>Downloads : 54875</div>
+                <div>Downloads : {category.total_downloads}</div>
               </Card.Body>
             </Card>
           </Col>

@@ -26,7 +26,7 @@ function Sidebar() {
       <Link to="/customer/addresslist" className="list-group-item list-group-item-action">
         Addresses
       </Link>
-      <Link href="#" className="list-group-item list-group-item-action text-danger">
+      <Link to="/customer/logout" className="list-group-item list-group-item-action text-danger">
         Logout
       </Link>
     </div>

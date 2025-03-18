@@ -8,7 +8,7 @@ function Login() {
     "password": '',
   });
   const [formError, setFormError] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState(""); 
 
   const inputHandler = (e) => {
     setLoginFormData({

@@ -5,7 +5,7 @@ import axios from "axios";
 import OrderRow from "./OrderRow";
 
 function Orders() {
-  const baseurl = "http://127.0.0.1:8000/api";
+  const baseurl = "http://127.0.0.1:8000/api"; 
   const customerId = localStorage.getItem("customer_id");
   const [orderItems, setOrderItems] = useState([]);
 

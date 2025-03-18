@@ -25,7 +25,7 @@ function Profile() {
     if (customer_id) {
       fetchData(baseurl + "/customer/" + customer_id);
     }
-  }, [customer_id]);
+  }, [customer_id]); 
 
   const fetchData = (url) => {
     axios
@@ -92,7 +92,6 @@ const handleFileChange = (e) => {
       }
     })
     .then(function (response){
-      console.log(response,"=============");
       
     })
     .catch(function (error){

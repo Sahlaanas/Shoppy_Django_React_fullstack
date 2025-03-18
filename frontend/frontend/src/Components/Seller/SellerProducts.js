@@ -1,8 +1,40 @@
-import React from "react";
+import React, {useEffect, useState} from "react";
 import SellerSidebar from "./SellerSidebar";
 import { Link } from "react-router-dom";
+import axios from 'axios';
 
 function SellerProducts() {
+  const baseurl = "http://127.0.0.1:8000/api";
+  const [products, setProducts] = useState([])
+  useEffect(() => {
+    fetchData(`${baseurl}/products/`)
+  }, []);
+
+  function fetchData(url) {
+    axios
+      .get(url)
+      .then((response) => {
+        setProducts(response.data.results)
+
+      }) 
+      .catch((error) => console.error("Error fetching data:", error));
+  }
+
+  function showConfirm(product_id) {
+    var _confirm = window.confirm('Are you sure to delete this product?');
+    if(_confirm){
+      fetch(baseurl+'/product/'+product_id+'/',{
+        method:'DELETE'
+      })
+      .then((response) => {
+        if(response.status==204){
+          fetchData(`${baseurl}/products/`)
+        }
+      })
+
+    }    
+  }
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -24,28 +56,39 @@ function SellerProducts() {
                   <th>#</th>
                   <th>Product</th>
                   <th>Price</th>
+                  <th>USD Price</th>
                   <th>Status</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                <tr>
-                  <td>1</td>
-                  <td>Product Title</td>
-                  <td>500</td>
-                  <td>Published</td>
-                  <td>
-                    <a href=" " className="btn btn-info btn-sm">
-                      View
-                    </a>
-                    <a href=" " className="btn btn-primary btn-sm ms-1">
-                      Edit
-                    </a>
-                    <a href=" " className="btn btn-danger btn-sm ms-1">
-                      Delete
-                    </a>
-                  </td>
-                </tr>
+                {
+                  products.map((item, index) => {
+                    return                 <tr>
+                    <td>{index+1}</td>
+                    <td><Link to={`/seller/update-product/${item.id}`}>{item.title}</Link></td>
+                    <td>Rs {item.price}</td>
+                    <td>$ {item.usd_price}</td>
+                    <td>
+                    {
+                      !item.publish_status && 'pending'
+                    }
+                    {
+                      item.publish_status && <span className='text-success'>Published</span>
+                    }
+                    </td>
+                    <td>
+                      <Link to={`/seller/update-product/${item.id}`} className="btn btn-primary btn-sm ms-1">
+                        Edit
+                      </Link>
+                      <Link to='' onClick={() => showConfirm(item.id)} className="btn btn-danger btn-sm ms-1">
+                        Delete
+                      </Link>
+                    </td>
+                  </tr>
+                  })
+                }
+
               </tbody>
             </table>
           </div>

@@ -19,6 +19,7 @@ function AllProducts() {
       })
       .catch((error) => console.error("Error fetching data:", error));
   }, [baseurl]);
+  
   const changeUrl = (newurl) =>
     setBaseurl(`http://127.0.0.1:8000/api${newurl}`);
   var links = [];

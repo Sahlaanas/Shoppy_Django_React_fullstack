@@ -12,7 +12,8 @@ import Form from "react-bootstrap/Form";
 function Header() {
   const userContext = useContext(UserContext);
   const { cartData, setCartData } = useContext(CartContext);
-  const {currencyData, setCurrencyData} = useContext(CurrencyContext);
+  const { currencyData, setCurrencyData } = useContext(CurrencyContext);
+  const checkVendor = localStorage.getItem("vendor_login");
   if (cartData == null) {
     var cartItems = 0;
   } else {
@@ -20,9 +21,8 @@ function Header() {
   }
   const changeCurrency = (e) => {
     var _currency = e.target.value;
-    localStorage.setItem('currency', _currency);
+    localStorage.setItem("currency", _currency);
     setCurrencyData(_currency);
-
   };
 
   return (
@@ -60,7 +60,6 @@ function Header() {
                 )}
                 {userContext && (
                   <>
-                    <NavDropdown.Divider />
                     <NavDropdown.Item as={Link} to="/customer/dashboard">
                       Dashboard
                     </NavDropdown.Item>
@@ -70,26 +69,38 @@ function Header() {
                   </>
                 )}
               </NavDropdown>
-              <NavDropdown title="Vendor Panel" id="basic-nav-dropdown">
-                <NavDropdown.Item as={Link} to="/seller/register">
-                  Register
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/seller/login">
-                  Login
-                </NavDropdown.Item>
-                <NavDropdown.Divider />
-                <NavDropdown.Item as={Link} to="/seller/dashboard">
-                  Dashboard
-                </NavDropdown.Item>
-                <NavDropdown.Item as={Link} to="/seller/login">
-                  Logout
-                </NavDropdown.Item>
-              </NavDropdown>
+
+              {!checkVendor && (
+                <NavDropdown title="Vendor Panel" id="basic-nav-dropdown">
+                  <NavDropdown.Item as={Link} to="/seller/register">
+                    Register
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/seller/login">
+                    Login
+                  </NavDropdown.Item>
+                </NavDropdown>
+              )}
+              {checkVendor && (
+                <NavDropdown title="Vendor Panel" id="basic-nav-dropdown">
+                  <NavDropdown.Item as={Link} to="/seller/dashboard">
+                    Dashboard
+                  </NavDropdown.Item>
+                  <NavDropdown.Item as={Link} to="/seller/logout">
+                    Logout
+                  </NavDropdown.Item>
+                </NavDropdown>
+              )}
+
               <div className="pt-2">
-              <Form.Select size="sm" className="ms-3" value={currencyData} onChange={changeCurrency}>
-              <option value="inr">INR</option>
-              <option value="usd">USD</option>
-            </Form.Select>
+                <Form.Select
+                  size="sm"
+                  className="ms-3"
+                  value={currencyData}
+                  onChange={changeCurrency}
+                >
+                  <option value="inr">INR</option>
+                  <option value="usd">USD</option>
+                </Form.Select>
               </div>
             </Nav>
           </Navbar.Collapse>

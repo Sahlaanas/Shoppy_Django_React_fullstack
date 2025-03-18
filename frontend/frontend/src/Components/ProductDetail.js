@@ -4,8 +4,9 @@ import axios from "axios";
 import SingleRelatedProduct from "./SingleRelatedProduct";
 import { CartContext, UserContext } from "../Context";
 
+
 function ProductDetail() {
-  const baseurl = "http://127.0.0.1:8000/api";
+  const baseurl = "http://127.0.0.1:8000/api"; 
   const [productData, setProductData] = useState([]);
   const { product_id } = useParams();
   const [productTags, setProductTags] = useState([]);
@@ -276,6 +277,8 @@ function ProductDetail() {
       {/* Related Products */}
       {relatedProducts.length > 0 && (
         <>
+
+        
           <h3 className="mt-5 mb-3 text-center">Related Products</h3>
           <div id="relatedProductSlider" className="carousel slide ">
             <div className="carousel-indicators">

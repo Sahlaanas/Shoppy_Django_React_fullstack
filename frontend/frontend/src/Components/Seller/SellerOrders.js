@@ -1,8 +1,42 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import SellerSidebar from "./SellerSidebar";
 import { Link } from "react-router-dom";
+import axios from "axios";
 
 function SellerOrders() {
+  const [orderItems, setOrderItems] = useState([]);
+  const vendor_id = localStorage.getItem("vendor_id");
+  const baseurl = "http://127.0.0.1:8000/api";
+  useEffect(() => {
+    fetchData(`${baseurl}/vendor/${vendor_id}/orderitems/`);
+  }, []);
+
+  function fetchData(url) {
+    axios
+      .get(url)
+      .then((response) => {
+        setOrderItems(response.data.result);
+      })
+      .catch((error) => console.error("Error fetching data:", error));
+  }
+  
+  function changeOrderStatus(orderId, status) {
+    fetch(`${baseurl}/order-modify/${orderId}/`, {
+      method: "PATCH",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ order_status: status }),
+    })
+      .then(function (response){
+        if(response.status==200){
+          fetchData(`${baseurl}/vendor/${vendor_id}/orderitems/`);
+        }
+      })
+      
+  }
+
   return (
     <div className="container mt-4">
       <div className="row">
@@ -23,153 +57,73 @@ function SellerOrders() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td>1</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Django
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <span className="text-success">
-                        <i className="fa fa-check-circle"></i> Completed
-                      </span>
-                    </td>
-                    <td>
-                      <div className="dropdown">
-                        <button
-                          className="btn btn-primary btn-sm dropdown-toggle"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-                          Change Status
-                        </button>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Approve
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Sent
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Complete
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>2</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Django
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <span className="text-success">
-                        <i className="fa fa-check-circle"></i> Completed
-                      </span>
-                    </td>
-                    <td>
-                      <div className="dropdown">
-                        <button
-                          className="btn btn-primary btn-sm dropdown-toggle"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-                          Change Status
-                        </button>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Approve
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Sent
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Complete
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>3</td>
-                    <td>
-                      <Link>
-                        <img
-                          src="/assets/demoImage.png"
-                          className="img-thumbnail"
-                          alt="....."
-                          width="80"
-                        />
-                        Django
-                      </Link>
-                    </td>
-                    <td>Rs.500</td>
-                    <td>
-                      <span className="text-success">
-                        <i className="fa fa-check-circle"></i> Completed
-                      </span>
-                    </td>
-                    <td>
-                      <div className="dropdown">
-                        <button
-                          className="btn btn-primary btn-sm dropdown-toggle"
-                          type="button"
-                          data-bs-toggle="dropdown"
-                          aria-expanded="false"
-                        >
-                          Change Status
-                        </button>
-                        <ul className="dropdown-menu">
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Approve
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Sent
-                            </a>
-                          </li>
-                          <li>
-                            <a className="dropdown-item" href=" ">
-                              Complete
-                            </a>
-                          </li>
-                        </ul>
-                      </div>
-                    </td>
-                  </tr>
+                  {orderItems.map((item, index) => {
+                    return (
+                      <tr>
+                        <td>1</td>
+                        <td>
+                          <Link>
+                            <img
+                              src={item.product.image}
+                              className="img-thumbnail"
+                              alt="....."
+                              width="80"
+                            />
+                            {item.product.title}
+                          </Link>
+                        </td>
+                        <td>Rs.{item.product.price}</td>
+                        <td>
+                          {item.order.order_status && (
+                            <span className="text-success">
+                              <i className="fa fa-check-circle"></i> Completed
+                            </span>
+                          )}
+                          {!item.order.order_status && (
+                            <span className="text-warning">
+                              <i className="fa fa-spinner"></i> Pending
+                            </span>
+                          )}
+                        </td>
+                        <td>
+                          <div className="dropdown">
+                            <button
+                              className="btn btn-primary btn-sm dropdown-toggle"
+                              type="button"
+                              data-bs-toggle="dropdown"
+                              aria-expanded="false"
+                            >
+                              Change Status
+                            </button>
+                            <ul className="dropdown-menu">
+                              <li>
+                                {!item.order.order_status && (
+                                  <a
+                                    onClick={() =>
+                                      changeOrderStatus(item.order.id, true)
+                                    }
+                                    className="dropdown-item"
+                                  >
+                                    Complete
+                                  </a>
+                                )}
+                                {item.order.order_status && (
+                                  <a
+                                    onClick={() =>
+                                      changeOrderStatus(item.order.id, false)
+                                    }
+                                    className="dropdown-item"
+                                  >
+                                    Pending
+                                  </a>
+                                )}
+                              </li>
+                            </ul>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

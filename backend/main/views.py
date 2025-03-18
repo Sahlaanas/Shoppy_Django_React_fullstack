@@ -1,4 +1,3 @@
-from django.shortcuts import render
 from . import serializers
 from rest_framework import generics, viewsets, pagination
 from .models import Vendor, Product, Customer, Order, OrderItems, Wishlist, CustomerAddress, ProductRating, ProductCategory
@@ -9,10 +8,11 @@ from django.contrib.auth.models import User
 from django.db import IntegrityError
 from rest_framework import viewsets
 from .models import Order
-from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.response import Response
-from rest_framework import generics, status
-
+from rest_framework import generics
+from django.db.models import Count
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import NotFound
+from django.contrib.auth.hashers import make_password
 # Create your views here.
 
 
@@ -21,9 +21,29 @@ class VendorList(generics.ListCreateAPIView):
     serializer_class = serializers.VendorSerializer
     # permission_classes = [permissions.IsAuthenticated]
     
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if 'fetch_limit' in self.request.GET:
+            limit=self.request.GET['fetch_limit']
+            limit= int(limit)
+            qs=qs.annotate(downloads=Count('product')).order_by('-downloads','-id')
+            qs=qs[:limit]
+        return qs
+    
 class VendorDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = Vendor.objects.all()
     serializer_class = serializers.VendorDetailSerializer
+    
+
+class VendorProductsList(generics.ListAPIView):
+    serializer_class = serializers.ProductListSerializer
+    queryset = Product.objects.all()
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['vendor_id']
+        qs = qs.filter(vendor__id=vendor_id).order_by('id')
+        return qs
     
 class ProductList(generics.ListCreateAPIView):
     queryset = Product.objects.all()
@@ -45,6 +65,12 @@ class ProductList(generics.ListCreateAPIView):
         if 'fetch_limit' in self.request.GET:
             limit=self.request.GET['fetch_limit']
             limit= int(limit)
+            qs=qs[:limit]
+            
+        if 'popular' in self.request.GET:
+            limit=self.request.GET['popular']
+            limit= int(limit)
+            qs=qs.order_by('-downloads','-id') 
             qs=qs[:limit]
         return qs
     
@@ -87,10 +113,7 @@ class CustomerDetail(generics.RetrieveUpdateDestroyAPIView):
 class UserDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
-    
 
-    
-    
 class OrderList(generics.ListCreateAPIView):
     queryset = Order.objects.all()
     serializer_class = serializers.OrderSerializer
@@ -106,6 +129,10 @@ class OrderList(generics.ListCreateAPIView):
 class OrderItemList(generics.ListCreateAPIView):
     queryset = OrderItems.objects.all()
     serializer_class=serializers.OrderItemSerializer
+    
+class OrderModify(generics.RetrieveUpdateAPIView):
+    queryset = Order.objects.all()
+    serializer_class = serializers.OrderSerializer
   
 class CustomerOrderItemList(generics.ListCreateAPIView):
     queryset = OrderItems.objects.all()
@@ -116,8 +143,49 @@ class CustomerOrderItemList(generics.ListCreateAPIView):
         customer_id = self.kwargs['pk']
         qs=qs.filter(order__customer__id=customer_id)
         return qs
-        
     
+class VendorOrderItemList(generics.ListCreateAPIView):
+    queryset = OrderItems.objects.all()
+    serializer_class=serializers.OrderItemSerializer  
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['pk']
+        qs=qs.filter(product__vendor__id=vendor_id)
+        return qs
+    
+# class VendorDailyReport(generics.ListCreateAPIView):
+#     queryset = OrderItems.objects.all()
+#     serializer_class=serializers.OrderItemSerializer  
+    
+#     def get_queryset(self):
+#         qs = super().get_queryset()
+#         vendor_id = self.kwargs['pk']
+#         qs=qs.filter(product__vendor__id=vendor_id).values('order__order_time__date').annotate(Count('id'))
+#         return qs
+    
+
+class VendorCustomerList(generics.ListAPIView):
+    queryset = OrderItems.objects.all()
+    serializer_class = serializers.OrderItemSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['pk']
+        qs=qs.filter(product__vendor__id=vendor_id)
+        qs = qs.distinct('order__customer')
+        return qs  
+    
+class VendorCustomerOrderitemsList(generics.ListAPIView):
+    queryset = OrderItems.objects.all()
+    serializer_class = serializers.OrderItemSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        vendor_id = self.kwargs['vendor_id']
+        customer_id = self.kwargs['customer_id']
+        qs=qs.filter(order__customer__id=customer_id,product__vendor__id=vendor_id) 
+        return qs   
     
 class OrderDetail(generics.ListAPIView):
     # queryset = OrderItems.objects.all()
@@ -128,6 +196,10 @@ class OrderDetail(generics.ListAPIView):
         order = Order.objects.get(id=order_id)
         order_items = OrderItems.objects.filter(order=order)
         return order_items
+    
+class OrderDelete(generics.RetrieveDestroyAPIView):
+    queryset = Order.objects.all()
+    serializer_class = serializers.OrderDetailSerializer
 
 class CustomerAddAddress(generics.ListCreateAPIView):
     serializer_class = serializers.CustomerAdressSerializer
@@ -148,24 +220,6 @@ class CustomerAddressList(generics.ListAPIView):
         qs = qs.filter(customer__id=customer_id)
         return qs
     
-# class CustomerAddressViewSet(viewsets.ModelViewSet):
-#     serializer_class = serializers.CustomerAdressSerializer
-#     queryset = CustomerAddress.objects.all()
-
-#     def perform_create(self, serializer):
-#         user = self.request.user
-#         print(f"User: {user}, Is Authenticated: {user.is_authenticated}")  # Debugging
-        
-#         if not user.is_authenticated:
-#             raise serializers.ValidationError("Authentication required. Please log in.")
-
-#         # If authenticated, assign the correct customer
-#         try:
-#             customer = Customer.objects.get(user=user)
-#         except Customer.DoesNotExist:
-#             raise serializers.ValidationError("No customer profile found for this user.")
-
-#         serializer.save(customer=customer)
 
 class AddressDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = CustomerAddress.objects.all()
@@ -180,6 +234,14 @@ class CategoryList(generics.ListCreateAPIView):
     queryset = ProductCategory.objects.all()
     serializer_class = serializers.CategorySerializer
     # permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if 'popular' in self.request.GET:
+            limit=int(self.request.GET['popular'])
+            qs=qs.annotate(downloads=Count('category_product')).order_by('-downloads','-id')
+            qs = qs[:limit]
+        return qs       
     
 class CategoryDetail(generics.RetrieveUpdateDestroyAPIView):
     queryset = ProductCategory.objects.all()
@@ -353,6 +415,18 @@ def customer_dashboard(request,pk):
             'totalWishlist' : totalWishlist,
         }
     return JsonResponse(msg)
+
+def vendor_dashboard(request,pk):
+    vendor_id = pk
+    totalProducts = Product.objects.filter(vendor__id=vendor_id).count()
+    totalOrders = OrderItems.objects.filter(product__vendor__id=vendor_id).count()
+    totalCustomers = OrderItems.objects.filter(product__vendor__id=vendor_id).values('order__customer').count()
+    msg = {
+            'totalOrders' : totalOrders,
+            'totalProducts' : totalProducts,
+            'totalCustomers' : totalCustomers,
+        }
+    return JsonResponse(msg)
     
 @csrf_exempt
 def vendor_register(request):
@@ -401,3 +475,63 @@ def vendor_register(request):
                 'msg' : 'Username already exists!!'
             }
     return JsonResponse(msg)
+
+@csrf_exempt    
+def vendor_login(request):
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(username=username, password=password)
+    if user:
+        vendor = Vendor.objects.get(user=user)
+        msg={
+            'bool' : True,
+            'user' : user.username,
+            'vendor_id' : vendor.id
+        }
+    else:
+        msg={
+            'bool' : False,
+            'msg' : 'Invalid username or password'
+        }
+    return JsonResponse(msg)
+
+@csrf_exempt   
+def delete_customer_orders(request, customer_id):
+    if request.method == 'DELETE':
+        orders = Order.objects.filter(customer__id=customer_id).delete()
+        msg = {
+            'bool' : False
+        }
+        if orders:
+            msg = {
+                'bool':True
+            }
+    return JsonResponse(msg)
+
+@csrf_exempt
+def vendor_change_password(request, pk):
+    password=request.POST.get('password')
+    vendor = Vendor.objects.get(id=pk)
+    user = vendor.user
+    user.password=make_password(password)
+    user.save()
+    msg = {
+        'bool' : True,
+        'msg' : 'Password has been changed'
+    }
+    return JsonResponse(msg)
+
+
+@csrf_exempt
+def customer_change_password(request, pk):
+    password=request.POST.get('password')
+    vendor = Customer.objects.get(id=pk)
+    user = vendor.user
+    user.password=make_password(password)
+    user.save()
+    msg = {
+        'bool' : True,
+        'msg' : 'Password has been changed'
+    }
+    return JsonResponse(msg)
+    
